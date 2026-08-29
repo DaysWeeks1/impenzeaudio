@@ -5,14 +5,18 @@
                 box-sizing: border-box;
             }
 
-            body {
+            html, body {
                 margin: 0;
+                height: 100%;
+                overflow: hidden;
                 background-color: cyan;
                 font-family: Arial, sans-serif;
             }
 
             .content {
-                min-height: 100vh;
+                position: relative;
+                height: calc(100vh - 72px);
+                overflow: hidden;
                 padding: 40px 20px 90px;
             }
 
@@ -24,12 +28,21 @@
             }
 
             .page {
-                display: none;
+                display: block;
+                position: absolute;
+                inset: 0 0 0 0;
                 padding: 20px;
+                opacity: 0;
+                transform: translateY(12px);
+                pointer-events: none;
+                transition: opacity 0.35s ease, transform 0.35s ease;
             }
 
             .page.active {
-                display: block;
+                position: relative;
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: auto;
             }
 
             .card {
@@ -65,9 +78,10 @@
 
             .bottom-bar {
                 position: fixed;
-                left: 0;
-                right: 0;
-                bottom: 0;
+                border-radius: 20px 20px;
+                left: 5px;
+                right: 5px;
+                bottom: 5px;
                 height: 72px;
                 display: flex;
                 align-items: center;
