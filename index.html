@@ -1,5 +1,6 @@
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
         <style>
             * {
                 box-sizing: border-box;
@@ -7,15 +8,18 @@
 
             html, body {
                 margin: 0;
-                height: 100%;
+                min-height: 100dvh;
+                width: 100%;
                 overflow: hidden;
                 background-color: cyan;
                 font-family: Arial, sans-serif;
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
             }
 
             .content {
                 position: relative;
-                height: calc(100vh - 72px);
+                height: calc(100dvh - 72px);
                 overflow: hidden;
                 padding: 24px 16px 90px;
             }
