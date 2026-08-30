@@ -75,6 +75,76 @@
                 line-height: 1.5;
             }
 
+            .song-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 14px;
+                max-width: 500px;
+                margin: 16px auto 0;
+            }
+
+            .song-tile {
+                aspect-ratio: 1;
+                border: 0;
+                border-radius: 16px;
+                padding: 16px;
+                display: flex;
+                align-items: flex-end;
+                text-align: left;
+                background: purple;
+                color: white;
+                font: inherit;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 8px 20px rgba(76, 0, 76, 0.22);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .song-tile:hover,
+            .song-tile:focus-visible {
+                transform: translateY(-3px);
+                box-shadow: 0 12px 24px rgba(76, 0, 76, 0.3);
+                outline: none;
+            }
+
+            .song-tile.playing {
+                background: #5f0a9b;
+                box-shadow: 0 0 0 3px white, 0 12px 24px rgba(76, 0, 76, 0.3);
+            }
+
+            .search-results {
+                list-style: none;
+                padding: 0 0 84px;
+                margin: 0 auto;
+                max-width: 500px;
+            }
+
+            .search-result {
+                width: 100%;
+                border: 0;
+                border-radius: 12px;
+                padding: 14px 16px;
+                margin-bottom: 10px;
+                background: rgba(255, 255, 255, 0.78);
+                color: #171017;
+                font: inherit;
+                font-weight: 600;
+                text-align: left;
+                cursor: pointer;
+            }
+
+            .search-result:hover,
+            .search-result:focus-visible {
+                background: white;
+                outline: 2px solid purple;
+                outline-offset: 2px;
+            }
+
+            .no-results {
+                margin: 16px 0;
+                text-align: center;
+            }
+
             .page[data-page="search"] .card {
                 background: transparent;
                 box-shadow: none;
@@ -260,17 +330,18 @@
         <div class="content">
             <section class="page active" data-page="home">
                 <h1 class="title1">Home</h1>
-                <div class="card">
-                    <h2>Ready to play?</h2>
-                    <p>Welcome back to your ads-free, no payment needed audio player.</p>
+                <div class="song-grid" aria-label="Featured songs">
+                    <button class="song-tile" type="button" data-song="uh oh">Uh oh</button>
+                    <button class="song-tile" type="button" data-song="Midnight Sun">Midnight Sun</button>
+                    <button class="song-tile" type="button" data-song="Dandellions">Dandellions</button>
+                    <button class="song-tile" type="button" data-song="Thats So True">Thats So True</button>
                 </div>
             </section>
 
             <section class="page" data-page="search">
                 <h1 class="title1">Search</h1>
-                <div class="card" style="margin-bottom: 70px;">
-                    <input class="search-box" type="text" placeholder="Search songs, artists, albums" />
-                </div>
+                <ul class="search-results" aria-label="Song results"></ul>
+                <input class="search-box" type="search" placeholder="Search songs, artists, albums" aria-label="Search songs" />
             </section>
 
             <section class="page" data-page="library">
@@ -301,10 +372,52 @@
             </a>
         </nav>
 
+        <audio class="audio-player" hidden></audio>
+
         <script>
             const navItems = document.querySelectorAll('.nav-item');
             const pages = document.querySelectorAll('.page');
             const bottomBar = document.querySelector('.bottom-bar');
+            const audioPlayer = document.querySelector('.audio-player');
+            const searchBox = document.querySelector('.search-box');
+            const searchResults = document.querySelector('.search-results');
+            const songTiles = document.querySelectorAll('.song-tile');
+            const songs = [
+                { name: 'Dandellions', file: 'Dandellions.m4a' },
+                { name: 'Midnight Sun', file: 'Midnight Sun.m4a' },
+                { name: 'Thats So True', file: 'Thats So True.m4a' },
+                { name: 'lush life', file: 'lush life.m4a' },
+                { name: 'siren sounds', file: 'siren sounds.m4a' },
+                { name: 'Uh oh', file: 'uh oh.m4a' }
+            ];
+
+            const findSong = (name) => songs.find((song) => song.name.toLowerCase() === name.toLowerCase());
+
+            const playSong = (name) => {
+                const song = findSong(name);
+                if (!song) return;
+
+                audioPlayer.src = `Audio/${encodeURIComponent(song.file)}`;
+                audioPlayer.play().catch(() => {});
+                document.querySelectorAll('[data-song]').forEach((item) => {
+                    item.classList.toggle('playing', item.dataset.song.toLowerCase() === song.name.toLowerCase());
+                });
+            };
+
+            const renderSearchResults = (query = '') => {
+                const matchingSongs = songs.filter((song) => song.name.toLowerCase().includes(query.trim().toLowerCase()));
+                searchResults.innerHTML = matchingSongs.length
+                    ? matchingSongs.map((song) => `<li><button class="search-result" type="button" data-song="${song.name}">${song.name}</button></li>`).join('')
+                    : '<li class="no-results">No songs found</li>';
+
+                searchResults.querySelectorAll('.search-result').forEach((result) => {
+                    result.addEventListener('click', () => playSong(result.dataset.song));
+                });
+            };
+
+            songTiles.forEach((tile) => tile.addEventListener('click', () => playSong(tile.dataset.song)));
+            searchBox.addEventListener('input', () => renderSearchResults(searchBox.value));
+            renderSearchResults();
 
             const isStandaloneWebApp = () => {
                 return window.matchMedia('(display-mode: standalone)').matches ||
