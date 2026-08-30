@@ -5,8 +5,8 @@
             :root {
                 --bottom-bar-height: 72px;
                 --bottom-bar-gap: 12px;
-                --player-height: 64px;
-                --player-gap: 8px;
+                --player-height: 56px;
+                --player-gap: 6px;
                 --safe-bottom-offset: 0px;
             }
 
@@ -176,22 +176,26 @@
                 bottom: calc(10px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap));
                 height: var(--player-height);
                 display: grid;
-                grid-template-columns: minmax(90px, 1fr) auto minmax(110px, 2fr);
+                grid-template-columns: auto auto;
+                grid-template-rows: 32px 16px;
+                justify-content: center;
                 align-items: center;
-                gap: 12px;
-                padding: 8px 14px;
+                opacity: 0.8;
+                padding: 5px 12px;
                 border-radius: 16px;
                 background: rgba(255, 255, 255, 0.86);
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
                 backdrop-filter: blur(6px);
                 z-index: 3;
+                transition: scale 0.2s ease, opacity 0.2s ease;
             }
 
             .media-song {
-                min-width: 0;
+                width: min(220px, 40vw);
                 overflow: hidden;
                 font-size: 0.88rem;
                 font-weight: 700;
+                text-align: center;
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
@@ -199,7 +203,7 @@
             .media-controls {
                 display: flex;
                 align-items: center;
-                gap: 6px;
+                gap: 3px;
             }
 
             .media-button {
@@ -213,6 +217,35 @@
                 font: inherit;
                 font-weight: 700;
                 cursor: pointer;
+                position: relative;
+                overflow: hidden;
+                isolation: isolate;
+            }
+
+            .media-button.ripple::after {
+                content: "";
+                position: absolute;
+                left: var(--x, 50%);
+                top: var(--y, 50%);
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: rgba(128, 0, 128, 0.3);
+                transform: translate(-50%, -50%) scale(0);
+                animation: media-ripple 0.7s ease-out forwards;
+                pointer-events: none;
+                z-index: -1;
+            }
+
+            @keyframes media-ripple {
+                0% {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(8);
+                }
             }
 
             .media-button:hover,
@@ -222,9 +255,25 @@
             }
 
             .media-progress {
-                width: 100%;
+                width: auto;
                 accent-color: purple;
                 cursor: pointer;
+            }
+
+            .media-progress-wrap {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 7px;
+                min-width: 0;
+            }
+
+            .media-time {
+                color: #4b414b;
+                font-size: 0.68rem;
+                font-variant-numeric: tabular-nums;
             }
 
             .list li {
@@ -376,7 +425,7 @@
                     left: calc(8px + env(safe-area-inset-left, 0px));
                     right: calc(8px + env(safe-area-inset-right, 0px));
                     bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height) + var(--bottom-bar-gap));
-                    grid-template-columns: minmax(70px, 1fr) auto;
+                    grid-template-columns: auto auto;
                     gap: 8px;
                     padding: 8px 10px;
                 }
@@ -438,7 +487,11 @@
                 <button class="media-button" type="button" data-action="play" aria-label="Play" title="Play">&#9654;</button>
                 <button class="media-button" type="button" data-action="skip" aria-label="Skip 10 seconds" title="Skip 10 seconds">+10</button>
             </div>
-            <input class="media-progress" type="range" min="0" max="0" step="0.1" value="0" aria-label="Song progress" />
+            <div class="media-progress-wrap">
+                <span class="media-time" data-time="current">0:00</span>
+                <input class="media-progress" type="range" min="0" max="0" step="0.1" value="0" aria-label="Song progress" />
+                <span class="media-time" data-time="duration">0:00</span>
+            </div>
         </section>
 
         <nav class="bottom-bar" aria-label="Bottom navigation">
@@ -469,13 +522,15 @@
             const mediaSong = document.querySelector('.media-song');
             const playButton = document.querySelector('[data-action="play"]');
             const progressBar = document.querySelector('.media-progress');
+            const currentTimeLabel = document.querySelector('[data-time="current"]');
+            const durationLabel = document.querySelector('[data-time="duration"]');
             const songs = [
                 { name: 'Dandellions', file: 'Dandellions.m4a' },
                 { name: 'Midnight Sun', file: 'Midnight Sun.m4a' },
                 { name: 'Thats So True', file: 'Thats So True.m4a' },
-                { name: 'lush life', file: 'lush life.m4a' },
-                { name: 'siren sounds', file: 'siren sounds.m4a' },
-                { name: 'Uh oh', file: 'uh oh.m4a' }
+                { name: 'Lush Life', file: 'lush life.m4a' },
+                { name: 'Siren Sounds', file: 'siren sounds.m4a' },
+                { name: 'Uh Oh', file: 'uh oh.m4a' }
             ];
 
             const findSong = (name) => songs.find((song) => song.name.toLowerCase() === name.toLowerCase());
@@ -485,6 +540,13 @@
                 playButton.innerHTML = isPlaying ? '&#10074;&#10074;' : '&#9654;';
                 playButton.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
                 playButton.title = isPlaying ? 'Pause' : 'Play';
+            };
+
+            const formatTime = (seconds) => {
+                if (!Number.isFinite(seconds)) return '0:00';
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, '0');
+                return `${minutes}:${remainingSeconds}`;
             };
 
             const playSong = (name) => {
@@ -512,6 +574,17 @@
 
             songTiles.forEach((tile) => tile.addEventListener('click', () => playSong(tile.dataset.song)));
             searchBox.addEventListener('input', () => renderSearchResults(searchBox.value));
+            document.querySelectorAll('.media-button').forEach((button) => {
+                button.addEventListener('click', (event) => {
+                    const rect = button.getBoundingClientRect();
+                    button.style.setProperty('--x', `${event.clientX - rect.left}px`);
+                    button.style.setProperty('--y', `${event.clientY - rect.top}px`);
+                    button.classList.remove('ripple');
+                    void button.offsetWidth;
+                    button.classList.add('ripple');
+                    setTimeout(() => button.classList.remove('ripple'), 700);
+                });
+            });
             playButton.addEventListener('click', () => {
                 if (!audioPlayer.src) return;
                 if (audioPlayer.paused) {
@@ -531,14 +604,17 @@
             });
             audioPlayer.addEventListener('loadedmetadata', () => {
                 progressBar.max = audioPlayer.duration;
+                durationLabel.textContent = formatTime(audioPlayer.duration);
             });
             audioPlayer.addEventListener('timeupdate', () => {
                 progressBar.value = audioPlayer.currentTime;
+                currentTimeLabel.textContent = formatTime(audioPlayer.currentTime);
             });
             audioPlayer.addEventListener('play', updatePlayButton);
             audioPlayer.addEventListener('pause', updatePlayButton);
             audioPlayer.addEventListener('ended', () => {
                 progressBar.value = 0;
+                currentTimeLabel.textContent = '0:00';
                 updatePlayButton();
             });
             renderSearchResults();
