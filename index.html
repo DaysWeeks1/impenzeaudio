@@ -48,6 +48,7 @@
                 padding: 16px 16px 20px;
                 opacity: 0;
                 pointer-events: none;
+                overflow: hidden;
                 transition: opacity 0.35s ease;
             }
 
@@ -55,6 +56,21 @@
                 position: relative;
                 opacity: 1;
                 pointer-events: auto;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            .page[data-page="search"] {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-gutter: stable;
+                max-height: 100%;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .page[data-page="search"]::-webkit-scrollbar {
+                display: none;
             }
 
             .card {
@@ -192,20 +208,28 @@
                 left: calc(10px + env(safe-area-inset-left, 0px));
                 right: calc(10px + env(safe-area-inset-right, 0px));
                 bottom: calc(10px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap));
-                height: var(--player-height);
-                display: grid;
-                grid-template-columns: auto auto;
-                grid-template-rows: 32px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
                 justify-content: center;
-                align-items: center;
+                align-items: stretch;
                 opacity: 0.8;
-                padding: 5px 12px;
+                padding: 8px 12px 10px;
                 border-radius: 16px;
                 background: rgba(255, 255, 255, 0.86);
                 box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
                 backdrop-filter: blur(6px);
                 z-index: 3;
                 transition: scale 0.2s ease, opacity 0.2s ease;
+            }
+
+            .media-main-row {
+                display: grid;
+                grid-template-columns: auto auto;
+                grid-template-rows: 32px;
+                justify-content: center;
+                align-items: center;
+                column-gap: 0;
             }
 
             .media-song {
@@ -336,12 +360,6 @@
             .media-button:focus-visible {
                 background: rgba(128, 0, 128, 0.14);
                 outline: none;
-            }
-
-            .media-progress {
-                width: auto;
-                accent-color: purple;
-                cursor: pointer;
             }
 
             .library-card {
@@ -555,13 +573,25 @@
             }
 
             .media-progress-wrap {
-                grid-column: 1 / -1;
-                grid-row: 2;
+                position: static;
                 display: grid;
                 grid-template-columns: auto 1fr auto;
                 align-items: center;
                 gap: 7px;
                 min-width: 0;
+                width: 100%;
+                padding: 0;
+                z-index: auto;
+                background: transparent;
+                margin-top: -8px;
+                margin-bottom: -8px;
+            }
+
+            .media-progress {
+                width: 100%;
+                max-width: 100%;
+                accent-color: purple;
+                cursor: pointer;
             }
 
             .media-time {
@@ -833,14 +863,20 @@
                 .page[data-page="search"] {
                     overflow-y: auto;
                     -webkit-overflow-scrolling: touch;
-                    padding-bottom: 120px;
+                    height: calc(100dvh - 190px);
+                    max-height: calc(100dvh - 190px);
+                    padding-bottom: 170px;
                 }
 
                 .search-results {
-                    padding-bottom: 110px;
+                    padding-bottom: 120px;
                 }
 
                 .search-box {
+                    position: fixed;
+                    bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap) + var(--player-height) + var(--player-gap) + 18px);
+                    left: 50%;
+                    transform: translateX(-50%);
                     z-index: 4;
                 }
 
@@ -855,13 +891,14 @@
                 .media-bar {
                     left: calc(8px + env(safe-area-inset-left, 0px));
                     right: calc(8px + env(safe-area-inset-right, 0px));
-                    bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height) + var(--bottom-bar-gap));
+                    bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap));
                     height: var(--player-height);
                     grid-template-columns: auto auto;
-                    grid-template-rows: 20px 12px;
+                    grid-template-rows: 20px;
                     gap: 4px;
                     padding: 5px 10px;
                     align-items: center;
+                    justify-content: center;
                     z-index: 3;
                 }
 
@@ -871,17 +908,20 @@
 
                 .media-controls {
                     width: auto;
+                    justify-content: center;
                 }
 
                 .media-progress-wrap {
-                    width: 100%;
-                    grid-column: 1 / -1;
-                    grid-row: 2;
+                    left: calc(8px + env(safe-area-inset-left, 0px));
+                    right: calc(8px + env(safe-area-inset-right, 0px));
+                    bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap) + var(--player-height) + var(--player-gap) + 6px);
+                    padding: 0 10px;
+                    background: transparent;
+                    border-radius: 0;
+                    box-shadow: none;
                 }
 
                 .media-progress {
-                    grid-column: 1 / -1;
-                    grid-row: 2;
                     width: 100%;
                 }
 
@@ -968,12 +1008,14 @@
         </div>
 
         <section class="media-bar" aria-label="Media controls">
-            <span class="media-song">No song selected</span>
-            <div class="media-controls">
-                <button class="add-song-button" type="button" aria-label="Add current song to a playlist" title="Add current song to a playlist" disabled>+</button>
-                <button class="media-button" type="button" data-action="rewind" aria-label="Rewind 10 seconds" title="Rewind 10 seconds">-10</button>
-                <button class="media-button" type="button" data-action="play" aria-label="Play" title="Play">&#9654;</button>
-                <button class="media-button" type="button" data-action="skip" aria-label="Skip 10 seconds" title="Skip 10 seconds">+10</button>
+            <div class="media-main-row">
+                <span class="media-song">No song selected</span>
+                <div class="media-controls">
+                    <button class="add-song-button" type="button" aria-label="Add current song to a playlist" title="Add current song to a playlist" disabled>+</button>
+                    <button class="media-button" type="button" data-action="rewind" aria-label="Rewind 10 seconds" title="Rewind 10 seconds">-10</button>
+                    <button class="media-button" type="button" data-action="play" aria-label="Play" title="Play">&#9654;</button>
+                    <button class="media-button" type="button" data-action="skip" aria-label="Skip 10 seconds" title="Skip 10 seconds">+10</button>
+                </div>
             </div>
             <div class="media-progress-wrap">
                 <span class="media-time" data-time="current">0:00</span>
