@@ -111,6 +111,8 @@
                 padding: 16px;
                 display: flex;
                 align-items: flex-end;
+                justify-content: space-between;
+                gap: 8px;
                 text-align: left;
                 background: purple;
                 color: white;
@@ -119,6 +121,50 @@
                 cursor: pointer;
                 box-shadow: 0 8px 20px rgba(76, 0, 76, 0.22);
                 transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .song-tile-content {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                width: 100%;
+                gap: 8px;
+            }
+
+            .song-tile-name {
+                display: block;
+                max-width: calc(100% - 36px);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .song-tile-badge {
+                position: relative;
+                z-index: 1;
+                margin-left: auto;
+                align-self: flex-start;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                height: 20px;
+                padding: 0 6px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.18);
+                color: white;
+                font-size: 0.62rem;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                line-height: 1;
+                border: 1px solid rgba(255, 255, 255, 0.4);
+            }
+
+            .song-tile-badge.very-explicit {
+                background: rgba(255, 255, 255, 0.22);
+                border-color: rgba(255, 255, 255, 0.7);
             }
 
             .song-tile.ripple::after {
@@ -167,6 +213,15 @@
                 font-weight: 600;
                 text-align: left;
                 cursor: pointer;
+            }
+
+            .search-result .song-tile-content,
+            .playlist-song-name {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                gap: 8px;
             }
 
             .search-result:hover,
@@ -421,6 +476,20 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
                 font-weight: 700;
+            }
+
+            .playlist-song-name {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: inherit;
+                text-align: left;
+                font: inherit;
             }
 
             .playlist-row-count {
@@ -1195,17 +1264,55 @@
             const playlistPlayButton = document.querySelector('.playlist-play');
             const playlistShuffleButton = document.querySelector('.playlist-shuffle');
             const songs = [
-                { id: 'dandellions', name: 'Dandellions', file: 'Dandellions.m4a' },
-                { id: 'midnight-sun', name: 'Midnight Sun', file: 'Midnight Sun.m4a' },
-                { id: 'thats-so-true', name: 'Thats So True', file: 'Thats So True.m4a' },
-                { id: 'lush-life', name: 'Lush Life', file: 'lush life.m4a' },
-                { id: 'siren-sounds', name: 'Siren Sounds', file: 'siren sounds.m4a' },
-                { id: 'uh-oh', name: 'Uh Oh', file: 'uh oh.m4a' },
-                { id: 'fast-car-jonas-blue-remix', name: 'Fast Car Jonas Blue Remix', file: 'Fast car Jonas Blue remix.m4a'}
+                { id: 'dandellions', name: 'Dandellions', file: 'Dandellions.m4a', explicit: true, veryExplicit: false },
+                { id: 'midnight-sun', name: 'Midnight Sun', file: 'Midnight Sun.m4a', explicit: false, veryExplicit: false },
+                { id: 'thats-so-true', name: 'Thats So True', file: 'Thats So True.m4a', explicit: true, veryExplicit: true },
+                { id: 'lush-life', name: 'Lush Life', file: 'lush life.m4a', explicit: true, veryExplicit: false },
+                { id: 'siren-sounds', name: 'Siren Sounds', file: 'siren sounds.m4a', explicit: false, veryExplicit: false },
+                { id: 'uh-oh', name: 'Uh Oh', file: 'uh oh.m4a', explicit: true, veryExplicit: false },
+                { id: 'fast-car-jonas-blue-remix', name: 'Fast Car Jonas Blue Remix', file: 'Fast car Jonas Blue remix.m4a', explicit: true, veryExplicit: true },
+                { id: 'oh-say-can-you-see-harper-grace', name: 'Oh Say Can You See Harper Grace', file: 'Oh Say Can You See Harper Grace.m4a', explicit: false, veryExplicit: false }
             ];
+
+            const getSongBadgeText = (song) => {
+                if (!song) return '';
+                if (song.explicit && song.veryExplicit) return 'VE';
+                if (song.explicit) return 'E';
+                return '';
+            };
+
+            const getSongTileMarkup = (song) => {
+                const badgeText = getSongBadgeText(song);
+                const badgeMarkup = badgeText
+                    ? `<span class="song-tile-badge ${song.veryExplicit ? 'very-explicit' : 'explicit'}">${badgeText}</span>`
+                    : '';
+                return `
+                    <span class="song-tile-content">
+                        <span class="song-tile-name">${song.name}</span>
+                        ${badgeMarkup}
+                    </span>
+                `;
+            };
+
+            const getSongNameWithBadge = (song) => `
+                <span class="song-tile-content">
+                    <span class="song-tile-name">${song.name}</span>
+                    ${getSongBadgeText(song)
+                        ? `<span class="song-tile-badge ${song.veryExplicit ? 'very-explicit' : 'explicit'}">${getSongBadgeText(song)}</span>`
+                        : ''}
+                </span>
+            `;
 
             const findSongById = (id) => songs.find((song) => song.id === id);
             const findSong = (name) => songs.find((song) => song.name.toLowerCase() === name.toLowerCase());
+
+            const updateSongTiles = () => {
+                document.querySelectorAll('.song-tile').forEach((tile) => {
+                    const song = findSongById(tile.dataset.songId);
+                    if (!song) return;
+                    tile.innerHTML = getSongTileMarkup(song);
+                });
+            };
 
             const updatePlayButton = () => {
                 const isPlaying = !audioPlayer.paused;
@@ -1331,7 +1438,7 @@
                     const songButton = document.createElement('button');
                     songButton.className = 'playlist-song-name';
                     songButton.type = 'button';
-                    songButton.textContent = song.name;
+                    songButton.innerHTML = getSongNameWithBadge(song);
                     songButton.addEventListener('click', () => playPlaylistSong(playlist, song.id));
                     const removeButton = document.createElement('button');
                     removeButton.className = 'remove-song';
@@ -1440,7 +1547,13 @@
             const renderSearchResults = (query = '') => {
                 const matchingSongs = songs.filter((song) => song.name.toLowerCase().includes(query.trim().toLowerCase()));
                 searchResults.innerHTML = matchingSongs.length
-                    ? matchingSongs.map((song) => `<li><button class="search-result" type="button" data-song="${song.name}" data-song-id="${song.id}">${song.name}</button></li>`).join('')
+                    ? matchingSongs.map((song) => {
+                        const badgeText = getSongBadgeText(song);
+                        const badgeMarkup = badgeText
+                            ? `<span class="song-tile-badge ${song.veryExplicit ? 'very-explicit' : 'explicit'}">${badgeText}</span>`
+                            : '';
+                        return `<li><button class="search-result" type="button" data-song="${song.name}" data-song-id="${song.id}"><span class="song-tile-content"><span class="song-tile-name">${song.name}</span>${badgeMarkup}</span></button></li>`;
+                    }).join('')
                     : '<li class="no-results">No songs found</li>';
 
                 searchResults.querySelectorAll('.search-result').forEach((result) => {
@@ -1580,6 +1693,7 @@
                     option.textContent = 'Unable to add song';
                 }
             });
+            updateSongTiles();
             renderSearchResults();
 
             const isStandaloneWebApp = () => {
