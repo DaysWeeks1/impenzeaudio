@@ -149,22 +149,31 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
+                flex-shrink: 0;
                 min-width: 24px;
                 height: 20px;
                 padding: 0 6px;
                 border-radius: 6px;
-                background: rgba(255, 255, 255, 0.18);
+                background: #5f0a9b;
                 color: white;
                 font-size: 0.62rem;
                 font-weight: 800;
                 letter-spacing: 0.04em;
                 line-height: 1;
-                border: 1px solid rgba(255, 255, 255, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.65);
+                box-shadow: 0 2px 8px rgba(76, 0, 76, 0.18);
             }
 
             .song-tile-badge.very-explicit {
-                background: rgba(255, 255, 255, 0.22);
-                border-color: rgba(255, 255, 255, 0.7);
+                background: #3c085c;
+                border-color: rgba(255, 255, 255, 0.8);
+            }
+
+            .search-result .song-tile-badge,
+            .playlist-song-name .song-tile-badge {
+                background: #5f0a9b;
+                border-color: rgba(95, 10, 155, 0.7);
+                color: white;
             }
 
             .song-tile.ripple::after {
@@ -336,15 +345,46 @@
                 justify-content: center;
             }
 
-            .media-button[data-action="play"]::before {
+            .media-button[data-action="play"]::before,
+            .media-button[data-action="play"]::after {
                 content: "";
-                display: block;
+                position: absolute;
+                pointer-events: none;
+            }
+
+            .media-button[data-action="play"]::before {
                 width: 0;
                 height: 0;
-                margin-left: 3px;
+                left: 14px;
                 border-top: 7px solid transparent;
                 border-bottom: 7px solid transparent;
                 border-left: 12px solid #171017;
+            }
+
+            .media-button[data-action="play"]::after {
+                display: none;
+            }
+
+            .media-button[data-action="play"].is-playing::before,
+            .media-button[data-action="play"].is-playing::after {
+                display: block;
+                border: 0;
+                position: absolute;
+                width: 5px;
+                height: 16px;
+                background: #171017;
+                border-radius: 2px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+
+            .media-button[data-action="play"].is-playing::before {
+                left: 12px;
+            }
+
+            .media-button[data-action="play"].is-playing::after {
+                right: 12px;
+                left: auto;
             }
 
             .media-button.ripple::after {
@@ -1210,6 +1250,20 @@
                 authMessage.textContent = 'Persistent sign-in is unavailable in this browser.';
             });
 
+            function subscribeToPlaylists(user) {
+                if (unsubscribePlaylists) unsubscribePlaylists();
+                playlists = [];
+                activePlaylistId = null;
+                renderPlaylists();
+                const playlistQuery = query(playlistsCollection(user), orderBy('createdAt', 'asc'));
+                unsubscribePlaylists = onSnapshot(playlistQuery, (snapshot) => {
+                    playlists = snapshot.docs.map((playlistDocument) => ({ id: playlistDocument.id, ...playlistDocument.data() }));
+                    renderPlaylists();
+                }, () => {
+                    playlistError.textContent = 'Unable to load playlists. Check your Firestore rules.';
+                });
+            }
+
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     accountEmail.textContent = user.email || 'Signed in';
@@ -1316,7 +1370,8 @@
 
             const updatePlayButton = () => {
                 const isPlaying = !audioPlayer.paused;
-                playButton.innerHTML = isPlaying ? '&#10074;&#10074;' : '&#9654;';
+                playButton.classList.toggle('is-playing', isPlaying);
+                playButton.textContent = '';
                 playButton.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
                 playButton.title = isPlaying ? 'Pause' : 'Play';
                 updatePlayingStyles();
@@ -1491,20 +1546,6 @@
                     option.dataset.playlistId = playlist.id;
                     option.textContent = playlist.name;
                     pickerList.append(option);
-                });
-            };
-
-            const subscribeToPlaylists = (user) => {
-                if (unsubscribePlaylists) unsubscribePlaylists();
-                playlists = [];
-                activePlaylistId = null;
-                renderPlaylists();
-                const playlistQuery = query(playlistsCollection(user), orderBy('createdAt', 'asc'));
-                unsubscribePlaylists = onSnapshot(playlistQuery, (snapshot) => {
-                    playlists = snapshot.docs.map((playlistDocument) => ({ id: playlistDocument.id, ...playlistDocument.data() }));
-                    renderPlaylists();
-                }, () => {
-                    playlistError.textContent = 'Unable to load playlists. Check your Firestore rules.';
                 });
             };
 
