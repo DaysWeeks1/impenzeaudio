@@ -812,6 +812,11 @@
             }
 
             @media (max-width: 420px) {
+                :root {
+                    --player-height: 44px;
+                    --player-gap: 4px;
+                }
+
                 .content {
                     padding-top: 16px;
                 }
@@ -823,6 +828,20 @@
 
                 .title1 {
                     margin-bottom: 12px;
+                }
+
+                .page[data-page="search"] {
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                    padding-bottom: 120px;
+                }
+
+                .search-results {
+                    padding-bottom: 110px;
+                }
+
+                .search-box {
+                    z-index: 4;
                 }
 
                 .bottom-bar {
@@ -837,27 +856,27 @@
                     left: calc(8px + env(safe-area-inset-left, 0px));
                     right: calc(8px + env(safe-area-inset-right, 0px));
                     bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height) + var(--bottom-bar-gap));
-                    height: auto;
-                    grid-template-columns: 1fr;
-                    grid-template-rows: auto auto auto;
-                    justify-items: center;
-                    gap: 8px;
-                    padding: 10px 12px 8px;
+                    height: var(--player-height);
+                    grid-template-columns: auto auto;
+                    grid-template-rows: 20px 12px;
+                    gap: 4px;
+                    padding: 5px 10px;
+                    align-items: center;
+                    z-index: 3;
                 }
 
                 .media-song {
-                    width: 100%;
-                    max-width: none;
+                    width: min(180px, 52vw);
                 }
 
                 .media-controls {
-                    width: 100%;
+                    width: auto;
                 }
 
                 .media-progress-wrap {
                     width: 100%;
-                    grid-column: 1;
-                    grid-row: 3;
+                    grid-column: 1 / -1;
+                    grid-row: 2;
                 }
 
                 .media-progress {
