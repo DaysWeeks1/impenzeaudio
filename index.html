@@ -5,6 +5,8 @@
             :root {
                 --bottom-bar-height: 72px;
                 --bottom-bar-gap: 12px;
+                --player-height: 64px;
+                --player-gap: 8px;
                 --safe-bottom-offset: 0px;
             }
 
@@ -161,10 +163,68 @@
                 margin: 0;
                 display: block;
                 position: fixed;
-                bottom: calc(10px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap));
+                bottom: calc(10px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap) + var(--player-height) + var(--player-gap));
                 left: 50%;
                 transform: translateX(-50%);
                 z-index: 2;
+            }
+
+            .media-bar {
+                position: fixed;
+                left: calc(10px + env(safe-area-inset-left, 0px));
+                right: calc(10px + env(safe-area-inset-right, 0px));
+                bottom: calc(10px + env(safe-area-inset-bottom, 0px) + var(--safe-bottom-offset) + var(--bottom-bar-height) + var(--bottom-bar-gap));
+                height: var(--player-height);
+                display: grid;
+                grid-template-columns: minmax(90px, 1fr) auto minmax(110px, 2fr);
+                align-items: center;
+                gap: 12px;
+                padding: 8px 14px;
+                border-radius: 16px;
+                background: rgba(255, 255, 255, 0.86);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+                backdrop-filter: blur(6px);
+                z-index: 3;
+            }
+
+            .media-song {
+                min-width: 0;
+                overflow: hidden;
+                font-size: 0.88rem;
+                font-weight: 700;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .media-controls {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .media-button {
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                border: 0;
+                border-radius: 50%;
+                background: transparent;
+                color: #171017;
+                font: inherit;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+            .media-button:hover,
+            .media-button:focus-visible {
+                background: rgba(128, 0, 128, 0.14);
+                outline: none;
+            }
+
+            .media-progress {
+                width: 100%;
+                accent-color: purple;
+                cursor: pointer;
             }
 
             .list li {
@@ -312,6 +372,20 @@
                     bottom: calc(8px + env(safe-area-inset-bottom, 0px));
                 }
 
+                .media-bar {
+                    left: calc(8px + env(safe-area-inset-left, 0px));
+                    right: calc(8px + env(safe-area-inset-right, 0px));
+                    bottom: calc(8px + env(safe-area-inset-bottom, 0px) + var(--bottom-bar-height) + var(--bottom-bar-gap));
+                    grid-template-columns: minmax(70px, 1fr) auto;
+                    gap: 8px;
+                    padding: 8px 10px;
+                }
+
+                .media-progress {
+                    grid-column: 1 / -1;
+                    grid-row: 2;
+                }
+
                 .nav-item {
                     flex-basis: 56px;
                     width: 56px;
@@ -357,6 +431,16 @@
             </section>
         </div>
 
+        <section class="media-bar" aria-label="Media controls">
+            <span class="media-song">No song selected</span>
+            <div class="media-controls">
+                <button class="media-button" type="button" data-action="rewind" aria-label="Rewind 10 seconds" title="Rewind 10 seconds">-10</button>
+                <button class="media-button" type="button" data-action="play" aria-label="Play" title="Play">&#9654;</button>
+                <button class="media-button" type="button" data-action="skip" aria-label="Skip 10 seconds" title="Skip 10 seconds">+10</button>
+            </div>
+            <input class="media-progress" type="range" min="0" max="0" step="0.1" value="0" aria-label="Song progress" />
+        </section>
+
         <nav class="bottom-bar" aria-label="Bottom navigation">
             <a class="nav-item active" data-page="home" aria-label="Home">
                 <span class="nav-icon">⌂</span>
@@ -382,6 +466,9 @@
             const searchBox = document.querySelector('.search-box');
             const searchResults = document.querySelector('.search-results');
             const songTiles = document.querySelectorAll('.song-tile');
+            const mediaSong = document.querySelector('.media-song');
+            const playButton = document.querySelector('[data-action="play"]');
+            const progressBar = document.querySelector('.media-progress');
             const songs = [
                 { name: 'Dandellions', file: 'Dandellions.m4a' },
                 { name: 'Midnight Sun', file: 'Midnight Sun.m4a' },
@@ -393,11 +480,19 @@
 
             const findSong = (name) => songs.find((song) => song.name.toLowerCase() === name.toLowerCase());
 
+            const updatePlayButton = () => {
+                const isPlaying = !audioPlayer.paused;
+                playButton.innerHTML = isPlaying ? '&#10074;&#10074;' : '&#9654;';
+                playButton.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play');
+                playButton.title = isPlaying ? 'Pause' : 'Play';
+            };
+
             const playSong = (name) => {
                 const song = findSong(name);
                 if (!song) return;
 
                 audioPlayer.src = `Audio/${encodeURIComponent(song.file)}`;
+                mediaSong.textContent = song.name;
                 audioPlayer.play().catch(() => {});
                 document.querySelectorAll('[data-song]').forEach((item) => {
                     item.classList.toggle('playing', item.dataset.song.toLowerCase() === song.name.toLowerCase());
@@ -417,6 +512,35 @@
 
             songTiles.forEach((tile) => tile.addEventListener('click', () => playSong(tile.dataset.song)));
             searchBox.addEventListener('input', () => renderSearchResults(searchBox.value));
+            playButton.addEventListener('click', () => {
+                if (!audioPlayer.src) return;
+                if (audioPlayer.paused) {
+                    audioPlayer.play().catch(() => {});
+                } else {
+                    audioPlayer.pause();
+                }
+            });
+            document.querySelector('[data-action="rewind"]').addEventListener('click', () => {
+                audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+            });
+            document.querySelector('[data-action="skip"]').addEventListener('click', () => {
+                audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + 10);
+            });
+            progressBar.addEventListener('input', () => {
+                audioPlayer.currentTime = Number(progressBar.value);
+            });
+            audioPlayer.addEventListener('loadedmetadata', () => {
+                progressBar.max = audioPlayer.duration;
+            });
+            audioPlayer.addEventListener('timeupdate', () => {
+                progressBar.value = audioPlayer.currentTime;
+            });
+            audioPlayer.addEventListener('play', updatePlayButton);
+            audioPlayer.addEventListener('pause', updatePlayButton);
+            audioPlayer.addEventListener('ended', () => {
+                progressBar.value = 0;
+                updatePlayButton();
+            });
             renderSearchResults();
 
             const isStandaloneWebApp = () => {
