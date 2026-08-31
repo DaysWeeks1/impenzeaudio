@@ -1047,6 +1047,84 @@
                     font-size: 20px;
                 }
             }
+
+            .welcome-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(0, 35, 80, 0.28);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.welcome-popup-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.welcome-popup {
+    position: relative;
+    width: min(390px, 100%);
+    padding: 2rem 1.75rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #ffc220;
+    border-top: 6px solid #0071dc;
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+    transform: scale(0.85) translateY(15px);
+    transition: transform 0.3s ease;
+}
+
+.welcome-popup-overlay.show .welcome-popup {
+    transform: scale(1) translateY(0);
+}
+
+.welcome-popup-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #0071dc;
+    color: #ffc220;
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.welcome-popup h2 {
+    margin-bottom: 0.5rem;
+    color: #0071dc;
+    font-size: 1.7rem;
+}
+
+.welcome-popup p {
+    color: #444;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.welcome-popup-close {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.8rem;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #666;
+    font-size: 1.6rem;
+    cursor: pointer;
+}
         </style>
     </head>
     <body>
@@ -1173,6 +1251,22 @@
                 </div>
             </div>
         </div>
+        <div id="welcome-popup" class="welcome-popup-overlay">
+    <div class="welcome-popup" role="dialog" aria-modal="true">
+        <button
+            id="welcome-popup-close"
+            class="welcome-popup-close"
+            type="button"
+            aria-label="Close"
+        >
+            &times;
+        </button>
+
+        <div class="welcome-popup-icon">✓</div>
+        <h2>You've signed in with Impenze.</h2>
+        <p id="welcome-popup-message"></p>
+    </div>
+</div>
 
         <script type="module">
             import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js';
@@ -1199,12 +1293,13 @@
             } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
 
             const firebaseConfig = {
-                apiKey: 'AIzaSyD-fonrZu0P2UJo2Fx5X2jn1vAU7luylBM',
-                authDomain: 'impenze-audio.firebaseapp.com',
-                projectId: 'impenze-audio',
-                storageBucket: 'impenze-audio.firebasestorage.app',
-                messagingSenderId: '1072242424083',
-                appId: '1:1072242424083:web:933acb69fa2e704e6d02e6'
+                apiKey: 'AIzaSyCXXl_DOuzdDkVfgkOJOQdYws30xkRpeGU',
+                authDomain: 'impenze-accounts.firebaseapp.com',
+                projectId: 'impenze-accounts',
+                storageBucket: 'impenze-accounts.firebasestorage.app',
+                messagingSenderId: '41065848995',
+                appId: '1:41065848995:web:fd635e42d1b6cd5a521f16',
+                measurementId: 'G-GGL20H8WJC'
             };
 
             const firebaseApp = initializeApp(firebaseConfig);
@@ -1215,6 +1310,28 @@
             const authSubmit = document.querySelector('.auth-submit');
             const accountEmail = document.querySelector('.account-email');
             const signOutButton = document.querySelector('.sign-out');
+            const welcomePopup = document.querySelector('#welcome-popup');
+const welcomePopupMessage = document.querySelector('#welcome-popup-message');
+const welcomePopupClose = document.querySelector('#welcome-popup-close');
+
+let welcomePopupTimer;
+
+const showWelcomePopup = (displayName, email) => {
+    const name = displayName?.trim() || email?.split('@')[0] || 'there';
+
+    welcomePopupMessage.textContent = `Welcome back, ${name}.`;
+    welcomePopup.classList.add('show');
+
+    clearTimeout(welcomePopupTimer);
+    welcomePopupTimer = setTimeout(() => {
+        welcomePopup.classList.remove('show');
+    }, 4000);
+};
+
+welcomePopupClose.addEventListener('click', () => {
+    clearTimeout(welcomePopupTimer);
+    welcomePopup.classList.remove('show');
+});
             const persistenceReady = setPersistence(auth, browserLocalPersistence);
 
             const showAuthError = (error) => {
@@ -1227,14 +1344,41 @@
             };
 
             authForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                authMessage.textContent = '';
-                authSubmit.disabled = true;
+    event.preventDefault();
+    authMessage.textContent = '';
+    authSubmit.disabled = true;
 
-                const formData = new FormData(authForm);
-                try {
-                    await persistenceReady;
-                    await signInWithEmailAndPassword(auth, formData.get('email'), formData.get('password'));
+    const formData = new FormData(authForm);
+
+    try {
+        await persistenceReady;
+
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            formData.get('email'),
+            formData.get('password')
+        );
+
+        showWelcomePopup(
+            userCredential.user.displayName,
+            userCredential.user.email
+        );
+    } catch (error) {
+        if (error.code) {
+            showAuthError(error);
+        } else {
+            authMessage.textContent =
+                'Persistent sign-in is unavailable in this browser.';
+        }
+
+        authSubmit.disabled = false;
+    }
+});
+
+showWelcomePopup(
+    userCredential.user.displayName,
+    userCredential.user.email
+);
                 } catch (error) {
                     if (error.code) {
                         showAuthError(error);
