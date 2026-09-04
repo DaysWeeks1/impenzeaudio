@@ -1375,20 +1375,6 @@ welcomePopupClose.addEventListener('click', () => {
     }
 });
 
-showWelcomePopup(
-    userCredential.user.displayName,
-    userCredential.user.email
-);
-                } catch (error) {
-                    if (error.code) {
-                        showAuthError(error);
-                    } else {
-                        authMessage.textContent = 'Persistent sign-in is unavailable in this browser.';
-                    }
-                    authSubmit.disabled = false;
-                }
-            });
-
             signOutButton.addEventListener('click', () => signOut(auth));
 
             persistenceReady.catch(() => {
